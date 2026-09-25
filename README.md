@@ -1,227 +1,152 @@
-# DeBERTa-ConPara
+# RawGuard — robust detection of AI-generated text
 
-**Attack-Aware and Deployment-Realistic Detection of AI-Generated Text**
+[![Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-deberta--conpara-blue)](https://huggingface.co/mohamedmady/deberta-conpara)
+[![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Space-orange)](https://huggingface.co/spaces/mohamedmady/deberta-conpara)
+[![Paper](https://img.shields.io/badge/Paper-AACL--IJCNLP%202026-b31b1b)](#citation)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-Mohamed Mady · Yupei Li · Johannes Reschke · Björn W. Schuller
+RawGuard is a DeBERTa-v3-large detector for machine-generated text, trained on a
+1.56M-document leakage-free corpus and hardened against the adversarial edits
+that break most detectors — homoglyph substitution, zero-width insertions,
+whitespace and typographic attacks.
 
-<!-- badges: uncomment on public release
-[![Paper](https://img.shields.io/badge/paper-EMNLP%202026-b31b1b)](.)
-[![Model](https://img.shields.io/badge/🤗-model-yellow)](.)
-[![Leaderboard](https://img.shields.io/badge/RAID-leaderboard-blue)](https://raid-bench.xyz)
--->
-
-A deployment-oriented detector for AI-generated text that is robust to
-adversarial perturbation **and** to distribution shift across corpora — a
-combination that, to our knowledge, no prior open academic system achieves.
-
----
-
-## The problem this addresses
-
-Detectors that top adversarial benchmarks routinely collapse when evaluated on
-data from a different corpus. This is not a marginal effect: systems scoring
-near-ceiling on RAID fall to roughly chance on HC3 Plus and MAGE under an
-identical fixed-threshold protocol.
-
-![Cross-dataset collapse](figures/fig1_cross_dataset_collapse.png)
-
-| System | RAID TPR@5% FPR | HC3+MAGE balanced acc. |
-|---|---|---|
-| Top academic RAID system | 99.8% | 53.9% |
-| ADAL (RoBERTa-large + adversarial T5) | 96.3% | 54.1% |
-| TMR (RoBERTa-base + hard-negative mining) | 95.8% | 72.3% |
-| Desklib v1.01 (DeBERTa-v3-large, no features/preprocessing) | 91.2% | — |
-| **DeBERTa-ConPara (ours)** | **97.79%** | **92.31%** |
-
-Cross-dataset figures were measured by us on our HC3 Plus and MAGE test sets at
-a fixed threshold (τ = 0.5). RAID figures are from the public leaderboard.
-
----
-
-## Method
-
-Four components, evaluated independently:
-
-**1 · Attack-aware preprocessing.** Deterministic four-layer Unicode
-normalisation applied before tokenisation: explicit homoglyph substitution
-(Cyrillic / Greek / fullwidth → Latin), NFKD decomposition with combining-mark
-stripping, typographic normalisation, and removal of invisible format
-characters. Idempotent, ~0 ms overhead, no learned parameters.
-
-**2 · Feature fusion.** 62 linguistic and statistical features (perplexity,
-burstiness, readability, syntactic and lexical statistics) reduced to 30 by
-mutual information, projected and fused with the DeBERTa `[CLS]` representation
-through a learned gate.
-
-**3 · Multi-corpus curation.** Training draws on HC3 Plus, M4, MAGE and RAID —
-35+ generators, 13+ domains, 11 adversarial attack categories — balanced so
-that no single corpus dominates either class.
-
-**4 · Fixed-threshold evaluation.** All reported numbers use a single threshold
-calibrated once on a held-out validation split, never tuned per test set.
-
-![Ablation and threshold sensitivity](figures/fig2_ablation_threshold.png)
-
-Removing preprocessing costs **−13.29 pp** RAID TPR@5% while leaving clean-text
-performance essentially unchanged (< 0.5 pp) — it is a defence against
-surface-form attack, not a general accuracy gain. Oracle access to a per-dataset
-optimal threshold would improve balanced accuracy by only **+0.47 pp** on
-average, which is what makes the fixed-threshold protocol defensible.
-
----
+Its central finding is that **Unicode normalisation acts in opposite directions
+depending on where you apply it**. Normalising the *training* corpus silently
+deduplicates it: 35.4% of RAID rows collapse into byte-identical copies of their
+clean siblings, deleting exactly the adversarial supervision the model needs.
+Normalising at *inference* is an effective defence. RawGuard is the cell of a
+complete 2×2×2 factorial (feature branch × train-time normalisation ×
+inference-time normalisation) that trains on raw text and normalises only at
+inference. All eight cells were submitted individually to the RAID hidden test.
 
 ## Results
 
-### RAID hidden test
+**RAID hidden test** (672,000 documents, 11 adversarial attacks):
 
-| Version | TPR@5% FPR | TPR@1% FPR | AUROC |
-|---|---|---|---|
-| v2.6 | 97.85% | 93.39% | 95.91% |
-| v2.13 | 97.78% | 93.86% | **97.15%** |
-| v2.14b | **98.90%** | — ¹ | 95.70% |
-| v2.16 | 98.88% | 87.20% | 96.91% |
+| metric | RawGuard |
+|---|---|
+| AUROC | 99.61 |
+| TPR @ 5% FPR | 99.01 |
+| TPR @ 1% FPR | 96.57 |
 
-¹ No threshold achieving 1% FPR existed on every domain, so the entry is
-excluded from the main leaderboard at that operating point.
+**Against every RAID leaderboard system that publishes a checkpoint.** Balanced
+accuracy at a single threshold calibrated once on our source validation split
+and then held fixed; RAID column is TPR @ 5% FPR from the leaderboard.
 
-![Version trajectory](figures/fig5_version_trajectory.png)
+| system | HC3-QA | HC3-SI | MAGE | avg | M4 | RAID |
+|---|---|---|---|---|---|---|
+| **RawGuard** | **99.69** | **83.50** | **96.23** | **93.14** | **98.27** | 99.01 |
+| MELD | 94.64 | 66.86 | 96.17 | 85.89 | 94.26 | **99.78** |
+| ModernBERT (raid-mage) | 95.40 | 52.54 | 93.51¹ | 80.48 | 84.07 | 94.14 |
+| Desklib v1.01 | 97.87 | 56.38 | 83.44 | 79.23 | 90.56 | 91.17 |
+| SuperAnnotate | 99.04 | 56.25 | 60.01 | 71.77 | 83.08 | 64.87 |
+| e5-small-lora | 87.29 | 59.45 | 67.12 | 71.29 | 78.66 | 85.69 |
+| TMR | 84.85 | 55.92 | 70.99 | 70.59 | 79.77 | 95.79 |
+| BERT-tiny-4M | 69.84 | 55.60 | 61.49 | 62.31 | 68.98 | 84.18 |
+| ADAL | 59.89 | 44.89 | 61.23 | 55.34 | 65.62 | 96.25 |
+| RADAR | 53.32 | 49.09 | 60.40 | 54.27 | 58.25 | 63.91 |
 
-### Cross-dataset (fixed threshold)
+¹ ModernBERT's released checkpoint was trained on MAGE, so that column is
+in-distribution for it.
 
-| Benchmark | Balanced acc. | AUROC | n |
-|---|---|---|---|
-| HC3-QA | 99.62% | 0.9999 | 24,969 |
-| HC3-SI | 86.35% | 0.9471 | 38,110 |
-| MAGE | 94.62% | 0.9867 | 60,743 |
-| SemEval-2024 Task 8A (mono) | 84.37% | 0.9821 | 34,272 |
-| M4GT-Bench Subtask A (en) | **96.40%** | 0.9964 | 152,809 |
+**Read these numbers with two caveats.** First, MELD leads RawGuard on RAID
+itself (99.78 vs 99.01) — on adversarial robustness alone it is the stronger
+open system. Second, HC3, MAGE and M4 are sources in RawGuard's own training
+corpus, so those columns are held-out splits for RawGuard but genuinely external
+data for every other system. The comparison shows how far each detector travels
+from *its* training distribution to *ours*, which favours RawGuard by
+construction. Several commercial systems score above 99 on RAID but publish no
+checkpoint and cannot be evaluated anywhere else.
 
----
+Reproduce the table with `evaluation/eval_competitors_external.py` — it
+downloads each competitor from the Hub and applies the identical protocol.
 
-## What actually drives per-domain performance
-
-The strongest empirical finding here is negative in flavour and, we think, the
-most useful thing in the paper: **per-domain detection quality tracks training
-data coverage, not model capacity.**
-
-![Domain coverage](figures/fig3_domain_coverage.png)
-
-Two controlled single-factor experiments on M4GT-Bench, changing nothing but
-the training data:
-
-| Domain | Before | After | Δ | Intervention |
-|---|---|---|---|---|
-| PeerRead | 66.9% | 98.6% | **+31.7 pp** | +33 K PeerRead samples, 5 generators |
-| WikiHow | 54.5% | 95.6% | **+41.1 pp** | +13,958 samples, 7 modern generators |
-
-Domains already covered moved by ≤ 0.8 pp. A domain sitting near chance is
-therefore not evidence of an intrinsic detection limit — it is evidence of a
-gap in generator coverage. WikiHow in M4 is generated exclusively by 2022-era
-models; adding contemporary generators resolves it entirely.
-
----
-
-## Where it still fails
-
-![Operating point gap](figures/fig4_operating_point_gap.png)
-
-At 1% FPR the picture is materially worse than at 5%, and the gap is
-concentrated in attacks that survive deterministic normalisation. Attacks that
-normalisation fully neutralises (whitespace, zero-width, paragraph insertion)
-show ~7–8 pp gaps; those that survive — homoglyph, synonym substitution,
-case perturbation, paraphrase — show 12–27 pp.
-
-The mechanism is a false-positive tail rather than a detection failure: at a
-strict FPR the threshold is set by the most AI-like *human* texts, and attacked
-human text scores anomalously. Per-domain, `reviews` is worst (55.6% TPR@1%),
-followed by `poetry` (80.2%) and `reddit` (82.4%).
-
-Other honest limitations: English only; Cohere remains the weakest generator
-family across every version (96.2% TPR@5%, 73.1% TPR@1%); and short texts
-(< 75 words) account for the large majority of HC3-SI errors.
-
----
-
-## Repository layout
-
-```
-.
-├── src/
-│   ├── unicode_preprocessing_v2.py   # attack-aware normalisation
-│   └── features.py                   # 62-feature extractor
-├── training/
-│   ├── train_conpara.py              # main training script
-│   └── build_dataset.py              # corpus assembly + stratified splits
-├── evaluation/
-│   ├── eval_cross_dataset.py         # HC3 / MAGE / SemEval / M4GT-Bench
-│   ├── eval_threshold_sweep.py       # fixed vs oracle threshold
-│   └── raid_submission.py            # leaderboard prediction generation
-├── scripts/
-│   └── make_figures.py               # regenerates every figure below
-├── figures/                          # PDF (vector) + SVG (editable) + PNG
-├── results/                          # per-attack / domain / generator tables
-└── docs/
-    ├── REPRODUCTION.md
-    ├── DATA.md                       # licences and acquisition
-    └── LIMITATIONS.md
-```
-
-## Quick start
+## Install
 
 ```bash
-git clone https://github.com/<user>/deberta-conpara
+git clone https://github.com/MohamedMady19/deberta-conpara.git
 cd deberta-conpara
-pip install -r requirements.txt
-
-# reproduce every figure in this README
-python3 scripts/make_figures.py
+pip install -r requirements.txt          # inference only
+pip install -r requirements-dev.txt      # + reproduction of the paper's tables
 ```
 
-Full data acquisition, training and evaluation instructions are in
-[`docs/REPRODUCTION.md`](docs/REPRODUCTION.md).
+## Use it
 
----
+```python
+from src.rawguard import RawGuard
 
-## Data
+det = RawGuard.from_pretrained()          # ~1.7 GB on first call
+print(det.score(["The quick brown fox ..."]))     # logit margin, higher = machine
+print(det.predict(["The quick brown fox ..."]))   # bool, at the stored threshold
+print(det.band(["The quick brown fox ..."]))      # coarse verbal band
+```
 
-We do not redistribute the training corpora. Each is obtained from its original
-source under its own licence, and `training/build_dataset.py` reconstructs the
-exact splits deterministically (seed 42). See [`docs/DATA.md`](docs/DATA.md).
+From the command line:
 
-| Corpus | Source | Redistributed here |
-|---|---|---|
-| HC3 Plus | HuggingFace | no |
-| M4 | GitHub (M4 authors) | no |
-| MAGE | HuggingFace | no |
-| RAID | `raid-bench` package | no |
-| M4GT-Bench | GitHub | no |
-| WikiHow generations (ours) | this work | see `docs/DATA.md` |
+```bash
+python src/rawguard.py --text "paste a document here"
+python src/rawguard.py --file documents.txt --jsonl scores.jsonl
+```
 
----
+Inference-time Unicode normalisation is applied by default and is what makes the
+detector robust to homoglyph and zero-width attacks. Turning it off (
+`--no-normalise`) reproduces the undefended condition from the ablation.
 
-## Intended use and misuse
+## How to read a score
 
-This is a research artifact. Detector output is **not** evidence of academic
-misconduct and must not be used as such. Our own measurements record false
-positive rates of 13–67% on formal academic prose depending on domain, and
-error rates rise sharply on texts under 75 words. Any deployment affecting
-individuals should treat a positive score as, at most, weak circumstantial
-signal warranting human review.
+The output is a **logit margin**, not a probability. The model is badly
+calibrated at the extremes, so a large margin does not mean a high probability of
+being machine-written. Use the stored threshold, or the coarse bands from
+`det.band()`, and treat the result as one piece of evidence for a human decision.
+
+Known limits, measured:
+
+- **Short text is unreliable.** Below ~60 words errors are enriched 4–5×. The CLI
+  warns below 75 words and the demo refuses below 25.
+- **Academic prose draws false positives** at rates between 13% and 67%
+  depending on the subcorpus. Do not use this to accuse a student.
+- **English only.** The training corpus is English; other languages are untested.
+- **Generators move.** Detectors decay as new models appear; a 2026 checkpoint
+  is not a permanent instrument.
+
+## What is in this repository
+
+```
+src/          rawguard.py (inference), unicode_preprocessing_v2.py (the normaliser),
+              features.py (the 30/62-feature extractors used by the ablations)
+training/     corpus construction, leakage-free splitting, the training loop
+evaluation/   the fixed-threshold protocol, competitor evaluation, RAID submission
+results/      per-cell metrics behind the paper's tables
+figures/      figure sources, regenerable
+docs/         the protocol in prose, and the negative results
+```
+
+Two negative results are included deliberately, because they cost real compute
+and the field should not repeat them: paraphrase augmentation with supervised
+contrastive learning (ConPara) does not help, and the 30-feature fusion branch is
+inert in distribution and harmful outside it, including a 49.8-point loss on RAID
+poetry.
 
 ## Citation
 
 ```bibtex
-@inproceedings{mady2026conpara,
-  title     = {DeBERTa-ConPara: Attack-Aware and Deployment-Realistic
-               Detection of AI-Generated Text},
-  author    = {Mady, Mohamed and Li, Yupei and Reschke, Johannes
-               and Schuller, Bj{\"o}rn W.},
-  booktitle = {Findings of EMNLP},
-  year      = {2026}
+@inproceedings{mady2026rawguard,
+  title     = {Where You Normalise Matters: Unicode Preprocessing and the
+               Robustness of AI-Generated Text Detection},
+  author    = {Mady, Mohamed and Li, Yupei and Reschke, Johannes and Schuller, Bj\"orn W.},
+  booktitle = {Proceedings of the 2026 Conference of the Asia-Pacific Chapter of the
+               Association for Computational Linguistics (AACL-IJCNLP)},
+  year      = {2026},
+  note      = {To appear}
 }
 ```
 
-## Licence
+## License
 
-Code released under MIT. Model weights and any released generations carry their
-own terms — see `docs/DATA.md`.
+MIT, matching the DeBERTa-v3-large backbone. The released weights are a
+derivative of `microsoft/deberta-v3-large`.
+
+## Acknowledgements
+
+Built on RAID (Dugan et al., ACL 2024), HC3 Plus, MAGE and M4. Compute provided
+by the RCAI cluster at OTH Regensburg.

@@ -1,10 +1,6 @@
+# inference only
 torch>=2.0
-transformers>=4.35
+transformers>=4.35,<5
 sentencepiece
-scikit-learn>=1.3
+huggingface_hub>=0.20
 numpy>=1.24,<2.0
-pandas>=2.0
-matplotlib>=3.7
-tqdm
-pyarrow
-raid-bench

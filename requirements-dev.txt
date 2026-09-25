@@ -1,0 +1,10 @@
+# reproduction of the paper's tables (in addition to requirements.txt)
+-r requirements.txt
+scikit-learn>=1.3
+pandas>=2.0
+pyarrow
+matplotlib>=3.7
+tqdm
+raid-bench
+peft            # e5-small-lora competitor
+safetensors
