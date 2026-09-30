@@ -1,5 +1,5 @@
 """
-RawGuard — inference API for the DeBERTa-ConPara AI-generated-text detector.
+DeBERTa-ConPara — inference API for the DeBERTa-ConPara AI-generated-text detector.
 
 The released checkpoint is the no-feature, raw-trained cell of the 2x2x2
 factorial reported in the paper, scored with inference-time Unicode
@@ -16,16 +16,16 @@ confidence. The default threshold is the one stored in the checkpoint
 
 Usage
 -----
-    from rawguard import RawGuard
+    from conpara import ConPara
 
-    det = RawGuard.from_pretrained()            # downloads from the Hub
+    det = ConPara.from_pretrained()            # downloads from the Hub
     scores = det.score(["some text", "another text"])
     flags  = det.predict(["some text"])         # bool, at the stored threshold
 
 CLI
 ---
-    python rawguard.py --text "paste a document here"
-    python rawguard.py --file docs.txt --jsonl out.jsonl
+    python conpara.py --text "paste a document here"
+    python conpara.py --file docs.txt --jsonl out.jsonl
 """
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ class NoFeat(nn.Module):
 
 
 @dataclass
-class RawGuard:
+class ConPara:
     model: NoFeat
     tokenizer: object
     threshold: float
@@ -92,7 +92,7 @@ class RawGuard:
     @classmethod
     def from_pretrained(cls, path: Optional[str] = None, device: Optional[str] = None,
                         repo_id: str = HF_REPO, filename: str = HF_FILE,
-                        use_fast_tokenizer: bool = True) -> "RawGuard":
+                        use_fast_tokenizer: bool = True) -> "ConPara":
         """`path` is a local .pt; without it the checkpoint is fetched from the Hub."""
         if path is None:
             from huggingface_hub import hf_hub_download
@@ -101,7 +101,7 @@ class RawGuard:
         ck = torch.load(path, map_location="cpu", weights_only=False)
         sd = ck["model_state_dict"] if "model_state_dict" in ck else ck
         if any(k.startswith("feat_proj") for k in sd):
-            raise ValueError("this checkpoint has a feature branch; RawGuard is the no-feature cell")
+            raise ValueError("this checkpoint has a feature branch; ConPara is the no-feature cell")
         model = NoFeat(config_only=True)
         model.load_state_dict(sd, strict=True)      # strict: a silent mismatch is a wrong model
         model.to(device).eval()
@@ -160,7 +160,7 @@ def _read_inputs(a) -> List[str]:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="RawGuard AI-generated-text detector")
+    ap = argparse.ArgumentParser(description="DeBERTa-ConPara AI-generated-text detector")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--text", help="a single document")
     g.add_argument("--file", help="one document per line, or - for stdin")
@@ -172,7 +172,7 @@ def main() -> None:
     ap.add_argument("--jsonl", help="write results here instead of stdout")
     a = ap.parse_args()
 
-    det = RawGuard.from_pretrained(path=a.ckpt)
+    det = ConPara.from_pretrained(path=a.ckpt)
     texts = _read_inputs(a)
     scores = det.score(texts, batch_size=a.batch_size, normalise_input=not a.no_normalise)
     thr = det.threshold if a.threshold is None else a.threshold

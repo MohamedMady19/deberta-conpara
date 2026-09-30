@@ -1,12 +1,12 @@
-# RawGuard — robust detection of AI-generated text
+# DeBERTa-ConPara: robust detection of AI-generated text
 
 [![Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-deberta--conpara-blue)](https://huggingface.co/mohamedmady/deberta-conpara)
 [![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Space-orange)](https://huggingface.co/spaces/mohamedmady/deberta-conpara)
 [![Paper](https://img.shields.io/badge/Paper-AACL--IJCNLP%202026-b31b1b)](#citation)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-RawGuard is a DeBERTa-v3-large detector for machine-generated text, trained on a
-1.56M-document leakage-free corpus and hardened against the adversarial edits
+DeBERTa-ConPara is a DeBERTa-v3-large detector for machine-generated text, trained on a
+1.55M-document leakage-free corpus and hardened against the adversarial edits
 that break most detectors — homoglyph substitution, zero-width insertions,
 whitespace and typographic attacks.
 
@@ -14,7 +14,7 @@ Its central finding is that **Unicode normalisation acts in opposite directions
 depending on where you apply it**. Normalising the *training* corpus silently
 deduplicates it: 35.4% of RAID rows collapse into byte-identical copies of their
 clean siblings, deleting exactly the adversarial supervision the model needs.
-Normalising at *inference* is an effective defence. RawGuard is the cell of a
+Normalising at *inference* is an effective defence. DeBERTa-ConPara is the cell of a
 complete 2×2×2 factorial (feature branch × train-time normalisation ×
 inference-time normalisation) that trains on raw text and normalises only at
 inference. All eight cells were submitted individually to the RAID hidden test.
@@ -23,7 +23,7 @@ inference. All eight cells were submitted individually to the RAID hidden test.
 
 **RAID hidden test** (672,000 documents, 11 adversarial attacks):
 
-| metric | RawGuard |
+| metric | DeBERTa-ConPara |
 |---|---|
 | AUROC | 99.61 |
 | TPR @ 5% FPR | 99.01 |
@@ -35,7 +35,7 @@ and then held fixed; RAID column is TPR @ 5% FPR from the leaderboard.
 
 | system | HC3-QA | HC3-SI | MAGE | avg | M4 | RAID |
 |---|---|---|---|---|---|---|
-| **RawGuard** | **99.69** | **83.50** | **96.23** | **93.14** | **98.27** | 99.01 |
+| **DeBERTa-ConPara** | **99.69** | **83.50** | **96.23** | **93.14** | **98.27** | 99.01 |
 | MELD | 94.64 | 66.86 | 96.17 | 85.89 | 94.26 | **99.78** |
 | ModernBERT (raid-mage) | 95.40 | 52.54 | 93.51¹ | 80.48 | 84.07 | 94.14 |
 | Desklib v1.01 | 97.87 | 56.38 | 83.44 | 79.23 | 90.56 | 91.17 |
@@ -49,12 +49,12 @@ and then held fixed; RAID column is TPR @ 5% FPR from the leaderboard.
 ¹ ModernBERT's released checkpoint was trained on MAGE, so that column is
 in-distribution for it.
 
-**Read these numbers with two caveats.** First, MELD leads RawGuard on RAID
+**Read these numbers with two caveats.** First, MELD leads DeBERTa-ConPara on RAID
 itself (99.78 vs 99.01) — on adversarial robustness alone it is the stronger
-open system. Second, HC3, MAGE and M4 are sources in RawGuard's own training
-corpus, so those columns are held-out splits for RawGuard but genuinely external
+open system. Second, HC3, MAGE and M4 are sources in DeBERTa-ConPara's own training
+corpus, so those columns are held-out splits for DeBERTa-ConPara but genuinely external
 data for every other system. The comparison shows how far each detector travels
-from *its* training distribution to *ours*, which favours RawGuard by
+from *its* training distribution to *ours*, which favours DeBERTa-ConPara by
 construction. Several commercial systems score above 99 on RAID but publish no
 checkpoint and cannot be evaluated anywhere else.
 
@@ -73,9 +73,9 @@ pip install -r requirements-dev.txt      # + reproduction of the paper's tables
 ## Use it
 
 ```python
-from src.rawguard import RawGuard
+from src.conpara import ConPara
 
-det = RawGuard.from_pretrained()          # ~1.7 GB on first call
+det = ConPara.from_pretrained()          # ~1.7 GB on first call
 print(det.score(["The quick brown fox ..."]))     # logit margin, higher = machine
 print(det.predict(["The quick brown fox ..."]))   # bool, at the stored threshold
 print(det.band(["The quick brown fox ..."]))      # coarse verbal band
@@ -84,8 +84,8 @@ print(det.band(["The quick brown fox ..."]))      # coarse verbal band
 From the command line:
 
 ```bash
-python src/rawguard.py --text "paste a document here"
-python src/rawguard.py --file documents.txt --jsonl scores.jsonl
+python src/conpara.py --text "paste a document here"
+python src/conpara.py --file documents.txt --jsonl scores.jsonl
 ```
 
 Inference-time Unicode normalisation is applied by default and is what makes the
@@ -112,7 +112,7 @@ Known limits, measured:
 ## What is in this repository
 
 ```
-src/          rawguard.py (inference), unicode_preprocessing_v2.py (the normaliser),
+src/          conpara.py (inference), unicode_preprocessing_v2.py (the normaliser),
               features.py (the 30/62-feature extractors used by the ablations)
 training/     corpus construction, leakage-free splitting, the training loop
 evaluation/   the fixed-threshold protocol, competitor evaluation, RAID submission
@@ -130,7 +130,7 @@ poetry.
 ## Citation
 
 ```bibtex
-@inproceedings{mady2026rawguard,
+@inproceedings{mady2026conpara,
   title     = {Where You Normalise Matters: Unicode Preprocessing and the
                Robustness of AI-Generated Text Detection},
   author    = {Mady, Mohamed and Li, Yupei and Reschke, Johannes and Schuller, Bj\"orn W.},

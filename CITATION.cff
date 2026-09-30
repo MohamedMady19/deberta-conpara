@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "DeBERTa-ConPara"
+version: "1.0.0"
+date-released: 2026-09-30
+repository-code: "https://github.com/MohamedMady19/deberta-conpara"
+url: "https://huggingface.co/mohamedmady/deberta-conpara"
+authors:
+  - family-names: Mady
+    given-names: Mohamed
+    affiliation: "Technical University of Munich; OTH Regensburg"
+preferred-citation:
+  type: conference-paper
+  title: "DeBERTa-ConPara: Attack-Aware and Deployment-Realistic Detection of AI-Generated Text"
+  authors:
+    - family-names: Mady
+      given-names: Mohamed
+    - family-names: Li
+      given-names: Yupei
+    - family-names: Reschke
+      given-names: Johannes
+    - family-names: Schuller
+      given-names: "Björn W."
+  collection-title: "Proceedings of the 14th International Joint Conference on Natural Language Processing and the 4th Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics (AACL-IJCNLP 2026)"
+  publisher:
+    name: "Association for Computational Linguistics"
+  year: 2026
