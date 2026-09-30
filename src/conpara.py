@@ -1,5 +1,5 @@
 """
-DeBERTa-ConPara — inference API for the DeBERTa-ConPara AI-generated-text detector.
+Inference API for the DeBERTa-ConPara AI-generated-text detector.
 
 The released checkpoint is the no-feature, raw-trained cell of the 2x2x2
 factorial reported in the paper, scored with inference-time Unicode
