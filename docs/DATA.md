@@ -87,7 +87,7 @@ and the outputs are not. Running `scripts/generate_wikihow.py` with your own
 API keys reproduces them.
 
 **One generator was excluded.** Gemini produced ~60-word responses regardless
-of instruction or token budget — the model spends its budget on internal
+of instruction or token budget: the model spends its budget on internal
 reasoning tokens, which are billed but not returned. Every sample failed the
 length filter, so the generator was dropped.
 

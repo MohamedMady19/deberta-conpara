@@ -2,12 +2,16 @@
 
 [![Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-deberta--conpara-blue)](https://huggingface.co/mohamedmady/deberta-conpara)
 [![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Space-orange)](https://huggingface.co/spaces/mohamedmady/deberta-conpara)
-[![Paper](https://img.shields.io/badge/Paper-AACL--IJCNLP%202026-b31b1b)](#citation)
+[![Paper](https://img.shields.io/badge/Paper-AACL--IJCNLP%202026-1f6feb)](https://arxiv.org/abs/2610.00883)
+[![arXiv](https://img.shields.io/badge/arXiv-2610.00883-b31b1b)](https://arxiv.org/abs/2610.00883)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
+**Paper:** [DeBERTa-ConPara: Attack-Aware and Deployment-Realistic Detection of AI-Generated Text](https://arxiv.org/abs/2610.00883),
+AACL-IJCNLP 2026 (main conference). Developed at the [Smart Embedded Systems Lab](https://github.com/SES-Lab-OTH), OTH Regensburg.
 
 DeBERTa-ConPara is a DeBERTa-v3-large detector for machine-generated text, trained on a
 1.55M-document leakage-free corpus and hardened against the adversarial edits
-that break most detectors — homoglyph substitution, zero-width insertions,
+that break most detectors: homoglyph substitution, zero-width insertions,
 whitespace and typographic attacks.
 
 Its central finding is that **Unicode normalisation acts in opposite directions
@@ -50,7 +54,7 @@ and then held fixed; RAID column is TPR @ 5% FPR from the leaderboard.
 in-distribution for it.
 
 **Read these numbers with two caveats.** First, MELD leads DeBERTa-ConPara on RAID
-itself (99.78 vs 99.01) — on adversarial robustness alone it is the stronger
+itself (99.78 vs 99.01); on adversarial robustness alone it is the stronger
 open system. Second, HC3, MAGE and M4 are sources in DeBERTa-ConPara's own training
 corpus, so those columns are held-out splits for DeBERTa-ConPara but genuinely external
 data for every other system. The comparison shows how far each detector travels
@@ -58,13 +62,13 @@ from *its* training distribution to *ours*, which favours DeBERTa-ConPara by
 construction. Several commercial systems score above 99 on RAID but publish no
 checkpoint and cannot be evaluated anywhere else.
 
-Reproduce the table with `evaluation/eval_competitors_external.py` — it
+Reproduce the table with `evaluation/eval_competitors_external.py`; it
 downloads each competitor from the Hub and applies the identical protocol.
 
 ## Install
 
 ```bash
-git clone https://github.com/MohamedMady19/deberta-conpara.git
+git clone https://github.com/SES-Lab-OTH/deberta-conpara.git
 cd deberta-conpara
 pip install -r requirements.txt          # inference only
 pip install -r requirements-dev.txt      # + reproduction of the paper's tables
@@ -89,8 +93,8 @@ python src/conpara.py --file documents.txt --jsonl scores.jsonl
 ```
 
 Inference-time Unicode normalisation is applied by default and is what makes the
-detector robust to homoglyph and zero-width attacks. Turning it off (
-`--no-normalise`) reproduces the undefended condition from the ablation.
+detector robust to homoglyph and zero-width attacks. Turning it off
+(`--no-normalise`) reproduces the undefended condition from the ablation.
 
 ## How to read a score
 
@@ -131,13 +135,18 @@ poetry.
 
 ```bibtex
 @inproceedings{mady2026conpara,
-  title     = {Where You Normalise Matters: Unicode Preprocessing and the
-               Robustness of AI-Generated Text Detection},
-  author    = {Mady, Mohamed and Li, Yupei and Reschke, Johannes and Schuller, Bj\"orn W.},
-  booktitle = {Proceedings of the 2026 Conference of the Asia-Pacific Chapter of the
-               Association for Computational Linguistics (AACL-IJCNLP)},
-  year      = {2026},
-  note      = {To appear}
+  title         = {{DeBERTa-ConPara}: Attack-Aware and Deployment-Realistic
+                   Detection of {AI}-Generated Text},
+  author        = {Mady, Mohamed and Li, Yupei and Reschke, Johannes and Schuller, Bj\"orn W.},
+  booktitle     = {Proceedings of the 14th International Joint Conference on Natural
+                   Language Processing and the 4th Conference of the Asia-Pacific Chapter
+                   of the Association for Computational Linguistics (AACL-IJCNLP 2026)},
+  year          = {2026},
+  publisher     = {Association for Computational Linguistics},
+  eprint        = {2610.00883},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2610.00883}
 }
 ```
 
@@ -148,5 +157,7 @@ derivative of `microsoft/deberta-v3-large`.
 
 ## Acknowledgements
 
-Built on RAID (Dugan et al., ACL 2024), HC3 Plus, MAGE and M4. Compute provided
-by the RCAI cluster at OTH Regensburg.
+Developed at the Smart Embedded Systems Lab, OTH Regensburg, in a cooperative
+doctorate with the Technical University of Munich. Built on RAID (Dugan et al.,
+ACL 2024), HC3 Plus, MAGE and M4. Compute provided by the RCAI cluster at OTH
+Regensburg.

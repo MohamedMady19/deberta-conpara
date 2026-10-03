@@ -3,7 +3,11 @@ message: "If you use this software, please cite the paper below."
 title: "DeBERTa-ConPara"
 version: "1.0.0"
 date-released: 2026-09-30
-repository-code: "https://github.com/MohamedMady19/deberta-conpara"
+repository-code: "https://github.com/SES-Lab-OTH/deberta-conpara"
+identifiers:
+  - type: url
+    value: "https://arxiv.org/abs/2610.00883"
+    description: "arXiv preprint of the paper"
 url: "https://huggingface.co/mohamedmady/deberta-conpara"
 authors:
   - family-names: Mady
@@ -11,6 +15,7 @@ authors:
     affiliation: "Technical University of Munich; OTH Regensburg"
 preferred-citation:
   type: conference-paper
+  url: "https://arxiv.org/abs/2610.00883"
   title: "DeBERTa-ConPara: Attack-Aware and Deployment-Realistic Detection of AI-Generated Text"
   authors:
     - family-names: Mady

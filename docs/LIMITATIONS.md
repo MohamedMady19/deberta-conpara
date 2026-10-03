@@ -9,8 +9,8 @@ headline number.
 
 Every experiment is English. The training corpora are English-primary, and we
 make no claim about other languages. Whether Latin-script languages share
-enough stylometric structure to permit transfer — and whether tonal or
-non-alphabetic languages need fundamentally different approaches — is open.
+enough stylometric structure to permit transfer (and whether tonal or
+non-alphabetic languages need fundamentally different approaches) is open.
 
 ## 2 · Strict false-positive rates
 
@@ -30,8 +30,8 @@ At 1% FPR performance is materially worse than at 5%, and unevenly so.
 The mechanism is a human false-positive tail, not a detection failure. At 1%
 FPR the threshold is set by the most AI-like human texts in a domain; where
 those score anomalously high the threshold is forced up and genuine detections
-fall below it. Product reviews are short, formulaic and superlative-heavy —
-close to AI register — and RAID provides only ~948 unique human review
+fall below it. Product reviews are short, formulaic and superlative-heavy,
+close to AI register, and RAID provides only ~948 unique human review
 articles, the smallest of any domain.
 
 ## 3 · Attacks that survive normalisation
@@ -69,7 +69,7 @@ training mixture should be assumed weaker until measured.
 ## 6 · A preprocessing bug affecting published numbers
 
 The homoglyph mapping contained an error. Cyrillic **р** (U+0440) was mapped to
-Latin `r` — its *transliteration* — rather than `p`, which is what it visually
+Latin `r` (its *transliteration*) rather than `p`, which is what it visually
 resembles. RAID's homoglyph attack substitutes `p → р`, so normalisation
 "corrected" the attack into a different corruption:
 
@@ -86,7 +86,7 @@ were added at the same time.
 
 Two consequences we want to be explicit about. First, the claim that
 normalisation *fully* neutralises homoglyph attacks was not true of the
-published system — the ablation gain was real, but the mechanism was partial.
+published system: the ablation gain was real, but the mechanism was partial.
 Second, the map is now visual rather than transliterative: genuine Cyrillic
 text will render as visual gibberish. That is the correct target for an
 English-only detector whose map exists to defeat homoglyph attack, but it is a
@@ -96,7 +96,7 @@ deliberate trade-off.
 
 Validation balanced accuracy at a fixed threshold is a poor selection criterion
 for a TPR@1% objective. In one run the epoch with the best validation balanced
-accuracy was substantially worse at 1% FPR than an earlier epoch — the model
+accuracy was substantially worse at 1% FPR than an earlier epoch: the model
 had become overconfident, compressing scores toward the extremes, which
 improves ranking marginally while worsening the human tail that strict-FPR
 performance depends on. Selection should use the deployment metric directly.

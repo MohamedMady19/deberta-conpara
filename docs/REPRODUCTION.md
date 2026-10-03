@@ -27,7 +27,7 @@ data/raw/
 ├── m4/                {arxiv,peerread,reddit,wikihow,wikipedia}_{generator}.jsonl
 ├── mage/              train.csv, validation.csv, test.csv
 ├── m4gt/              SubtaskA.jsonl, subtaskC_train_dev.jsonl
-└── wikihow_generated/ (optional — see step 2)
+└── wikihow_generated/ (optional, see step 2)
 ```
 
 RAID is fetched through the `raid-bench` package, not stored locally.
@@ -69,8 +69,8 @@ python3 training/build_dataset.py --stage split --plan-only
 python3 training/build_dataset.py --stage split --export
 ```
 
-`--plan-only` prints the full composition — per-source counts, class balance,
-train/val sizes — without writing anything. Check it before committing to the
+`--plan-only` prints the full composition (per-source counts, class balance,
+train/val sizes) without writing anything. Check it before committing to the
 extraction.
 
 Deterministic with seed 42.
@@ -93,7 +93,7 @@ the training split; the fitted parameters are stored in the checkpoint so that
 inference reproduces them exactly.
 
 **Select on your deployment metric.** The default saves on validation balanced
-accuracy, which is *not* aligned with a TPR@1% objective — see
+accuracy, which is *not* aligned with a TPR@1% objective; see
 [`LIMITATIONS.md`](LIMITATIONS.md) §7. Pass `--select tpr1` if strict-FPR
 performance is what you care about, and keep per-epoch snapshots so the choice
 can be revisited.
@@ -108,7 +108,7 @@ python3 evaluation/eval_threshold_sweep.py  --checkpoint <ckpt>
 python3 evaluation/raid_submission.py       --checkpoint <ckpt>
 ```
 
-RAID submission runs inference over 672,000 test items — about **5 h** on one
+RAID submission runs inference over 672,000 test items, about **5 h** on one
 4090. It writes `predictions.json` for the leaderboard.
 
 ---
@@ -121,29 +121,3 @@ python3 scripts/make_figures.py
 
 Writes vector PDF (`pdf.fonttype=42`, no rasterisation), editable SVG
 (`svg.fonttype='none'`) and PNG into `figures/`.
-
----
-
-## Migration checklist
-
-Files to copy in from the working tree, with any cleanup needed:
-
-| Destination | Source | Cleanup |
-|---|---|---|
-| `src/unicode_preprocessing_v2.py` | `~/Text/src/` | ✅ ready — includes the U+0440 fix |
-| `src/features.py` | `FeatureExtractor` from `train_conpara_v24.py` | extract into its own module |
-| `training/train_conpara.py` | `~/Text/train_conpara_v217.py` | strip absolute paths; add `--select` flag |
-| `training/build_dataset.py` | `extract_v217_sources.py` + `build_v217_splits_v2.py` | merge behind `--stage` |
-| `evaluation/eval_cross_dataset.py` | `~/Text/eval_ood_v216.py` | parameterise checkpoint |
-| `evaluation/eval_threshold_sweep.py` | threshold-sweep script | parameterise checkpoint |
-| `evaluation/raid_submission.py` | `raid_submission_v217.py` | parameterise checkpoint and τ |
-| `scripts/generate_wikihow.py` | `~/Text/scripts/generate_wikihow_ai.py` | **remove hard-coded API keys** |
-| `results/*.json` | RAID `results.json` files | keep per-attack/domain/generator breakdowns |
-
-Before the first commit:
-
-- [ ] no API keys anywhere (`git grep -iE "sk-|gsk_|xai-|AIza"`)
-- [ ] no absolute paths (`git grep "/home/"`)
-- [ ] no `.pt`, `.npz`, `.parquet` staged (covered by `.gitignore`)
-- [ ] version numbers reconciled — the repo should tell one coherent story,
-      not expose the full v1→v2.17 development history
